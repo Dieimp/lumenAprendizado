@@ -3,64 +3,74 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-use App\Models\Cars;
+use App\Services\CarService;
 
 class CarsController extends Controller
 {
+    private $service;
 
-    private $model;
-
-    public function __construct(Cars $cars)
+    public function __construct(CarService $service)
     {
-        $this->model = $cars;
+        $this->service = $service;
     }
 
-
-    public function getAll(){
-        $cars = $this->model->all();
-
-        return response()->json($cars);
+    public function getAll()
+    {
+        try {
+            return response()->json($this->service->getAll(), Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
     }
 
-    public function get($id){
-        $car = $this->model->find($id);
+    public function get($id)
+    {
+        $car = $this->service->get($id);
 
-        return response()->json($car);
+        try {
+            return response()->json($car, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->error();
+        }
     }
 
-
-    public function store(Request $request){
-
-        $car = $this->model->create($request->all());
-
-        return response()->json($car);
-
-
-
+    public function store(Request $request)
+    {
+        try {
+            return response()->json(
+                $this->service->store($request->all()), 
+                Response::HTTP_CREATED
+            );
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
     }
 
-    public function update($id, Request $request){
-        $car = $this->model->find($id)
-            ->update($request->all());
-
-
-        return response()->json($car);
-
-    
-
-
-
+    public function update($id, Request $request)
+    {
+        try {
+            return response()->json(
+                $this->service->update($id, $request->all()), 
+                Response::HTTP_OK
+            );
+        } catch (CustomValidationException $e) {
+            return $this->error($e->getMessage(), $e->getDetails());
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
     }
 
-    public function destroy($id, Request $request){
-        $car = $this->model->find($id)
-        ->delete($request->all());
-
-
-    return response()->json(data: null);
-
+    public function destroy($id)
+    {
+        try {
+            return response()->json(
+                $this->service->destroy($id), 
+                Response::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
     }
-
-    //
 }
